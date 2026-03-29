@@ -1,0 +1,16 @@
+{
+  "name": "Dofus Elevage",
+  "short_name": "DofusPet",
+  "start_url": "indexapp.html",
+  "scope": "indexapp.html",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#2ecc71",
+  "icons": [
+    {
+      "src": "../favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

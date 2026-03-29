@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elevage Familiers - En Quête de Succès</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="./app/style-app.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="./app/manifest.json">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Dofus Elevage">
+    <link rel="apple-touch-icon" href="favicon.png">
+</head>
+<body>
+
+<header>
+    <nav class="navbar">
+        <div class="logo">
+            <img src="./images/LogoDR.png" alt="Logo Dofus Rétro">
+            <button id="btn-notif" class="btn-notif-status" title="Activer les alertes">
+                <span id="notif-icon">🔔</span>
+            </button>
+            <img src="./images/LogoEQS.png" alt="Logo En Qûete de Succès">
+        </div>
+    </nav>
+</header>
+
+<main class="container">
+    <section class="selection-section">
+        <h2 class="main-title">Gestion de l'Élevage</h2>
+        <p class="subtitle">Planifiez vos repas pour optimiser la croissance de vos familiers.</p>
+
+        <div class="breeding-controls">
+            <button id="addPetRow" class="btn-add">Ajouter un familier à élever</button>
+        </div>
+
+        <div class="table-container">
+            <table id="breedingTable">
+                <thead>
+                    <tr>
+                        <th>Familier</th>
+                        <th>Caractéristique</th>
+                        <th>Nourriture</th>
+                        <th>Intervalle</th>
+                        <th>Dernier Repas</th>
+                        <th>Nourrir</th>
+                        <th> </th>
+                    </tr>
+                </thead>
+                <tbody id="breedingBody">
+                    </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script>
+const btnNotif = document.getElementById('btn-notif');
+const notifIcon = document.getElementById('notif-icon');
+
+// Vérifier l'état au chargement
+window.addEventListener('load', () => {
+    updateNotifButton();
+});
+
+btnNotif.addEventListener('click', async () => {
+    // Demander la permission
+    const permission = await Notification.requestPermission();
+    
+    if (permission === 'granted') {
+        new Notification("Notifications activées !", {
+            body: "Tu recevras une alerte quand tes familiers auront faim.",
+            icon: "./favicon.png"
+        });
+    } else if (permission === 'denied') {
+        alert("Tu as bloqué les notifications. Pour les réactiver, va dans les réglages de ton iPhone > Safari > Réglages des sites web.");
+    }
+    
+    updateNotifButton();
+});
+
+function updateNotifButton() {
+    if (!("Notification" in window)) {
+        btnNotif.style.display = "none"; // Navigateur non compatible
+        return;
+    }
+
+    if (Notification.permission === "granted") {
+        btnNotif.classList.add('enabled');
+        btnNotif.classList.remove('disabled');
+        notifIcon.innerText = "✅"; // Ou une cloche verte
+    } else if (Notification.permission === "denied") {
+        btnNotif.classList.add('disabled');
+        notifIcon.innerText = "🚫";
+    }
+}
+
+// Enregistrement du Service Worker et demande de permission
+if ('serviceWorker' in navigator && 'PushManager' in window) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker enregistré !'))
+            .catch(err => console.error('Erreur SW:', err));
+    });
+}
+
+async function askNotificationPermission() {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+        alert("Les notifications sont désactivées. Ajoute l'app à ton écran d'accueil pour les activer.");
+    }
+}
+
+// 1. Tes données (Tu peux en ajouter d'autres ici)
+const petData = {
+    "Atouin": { 
+        imageName: "Atouin",
+        interval: 5, 
+        stats: ["Soins", "Dommages"], 
+        food: { 
+            "Soins": ["Poisson", "Poisson comestible", "Poisson vidé"],
+            "Dommages": ["Viande", "Viande conservée", "Viande comestible"]
+        } 
+    },
+    "Bwak d'Air": { 
+        imageName: "BwakDAir",
+        interval: 11, 
+        stats: ["Agilité", "Vie", "Résistance Air"], 
+        food: { 
+            "Agilité": ["Graine de Sésame", "Graine de Tournesol sauvage", "Graine de Pavot", "Graine de Lin", "Graine de Chanvre"],
+            "Vie": ["Fraise", "Gland", "Noisette"],
+            "Résistance Air": ["Noix de Cajou", "Noix de Pécan"]
+        } 
+    },
+    "Bwak d'Eau": { 
+        imageName: "BwakDEau",
+        interval: 11, 
+        stats: ["Chance", "Vie", "Résistance Eau"], 
+        food: { 
+            "Chance": ["Graine de Sésame", "Graine de Tournesol sauvage", "Graine de Pavot", "Graine de Lin", "Graine de Chanvre"],
+            "Vie": ["Fraise", "Gland", "Noisette"],
+            "Résistance Eau": ["Noix de Cajou", "Noix de Pécan"]
+        } 
+    },
+    "Bwak de Feu": { 
+        imageName: "BwakDeFeu",
+        interval: 11, 
+        stats: ["Intelligence", "Vie", "Résistance Feu"], 
+        food: { 
+            "Intelligence": ["Graine de Sésame", "Graine de Tournesol sauvage", "Graine de Pavot", "Graine de Lin", "Graine de Chanvre"],
+            "Vie": ["Fraise", "Gland", "Noisette"],
+            "Résistance Feu": ["Noix de Cajou", "Noix de Pécan"]
+        } 
+    },
+    "Bwak de Terre": { 
+        imageName: "BwakDeTerre",
+        interval: 11, 
+        stats: ["Force", "Vie", "Résistance Terre"], 
+        food: { 
+            "Force": ["Graine de Sésame", "Graine de Tournesol sauvage", "Graine de Pavot", "Graine de Lin", "Graine de Chanvre"],
+            "Vie": ["Fraise", "Gland", "Noisette"],
+            "Résistance Terre": ["Noix de Cajou", "Noix de Pécan"]
+        } 
+    },
+    "Bworky": { 
+        imageName: "Bworky",
+        interval: 5, 
+        stats: ["Pods"], 
+        food: { 
+            "Pods": ["Noix de Cajou", "Noix de Pécan", "Gland", "Noisette"],
+        } 
+    },
+    "Chacha": { 
+        imageName: "Chacha",
+        interval: 5, 
+        stats: ["Agilité", "Force", "Intelligence", "Vie", "Chance", "Résistance Neutre"], 
+        food: { 
+            "Agilité": ["Plume de Tofu", "Oeuf de Tofu", "Aile du Tofu Maléfique"],
+            "Force": ["Oreilles du Tiwabbit", "Oreille du Grand Pa Wabbit"],
+            "Intelligence": ["Plume de Kwak", "Greu-Vette", "Greu-Vette vidée", "Goujon", "Goujon vidé"],
+            "Vie": ["Sang de Dragon Cochon", "Sang de Vampire"],
+            "Chance": ["Souris vertes", "Truite", "Truite vidé"],
+            "Résistance Neutre": ["Gelée à la fraise", "Gelée à la Menthe", "Gelée Bleutée"]
+        } 
+    },
+    "Petit Chacha Blanc": { 
+        imageName: "PetitChachaBlanc",
+        interval: 5, 
+        stats: ["Initiative"], 
+        food: { 
+            "Initiative": ["Viande", "Viande conservée"],
+        } 
+    },
+    "Petit Chienchien Noir": { 
+        imageName: "PetitChienchienNoir",
+        interval: 11, 
+        stats: ["% de Dommages"], 
+        food: { 
+            "% de Dommages": ["Poisson", "Poisson vidé"],
+        } 
+    },
+    "Croum": { 
+        imageName: "Croum",
+        interval: 5, 
+        stats: ["Résistance Air", "Résistance Eau", "Résistance Terre", "Résistance Feu", "Résistance Neutre"], 
+        food: { 
+            "Résistance Air": ["Lingot d'Or", "Aluminite"],
+            "Résistance Eau": ["Ebonite", "Kriptonite"],
+            "Résistance Terre": ["Magnésite", "Kobalite"],
+            "Résistance Feu": ["Bakélite", "Pyrute"],
+            "Résistance Neutre": ["Kouartz", "Rutile"]
+        } 
+    },
+    "Koalak Sanguin": { 
+        imageName: "Koalak Sanguin",
+        interval: 5, 
+        stats: ["Sagesse"], 
+        food: { 
+            "Sagesse": ["Boomerang du Koalak Sanguin", "Boomerang du Dok Alako", "Boomerang du Maître Koalak", "Boomerang du Warko Marron"],
+        } 
+    },
+    "Nomoon": { 
+        imageName: "Nomoon",
+        interval: 24, 
+        stats: ["Prospection"], 
+        food: { 
+            "Prospection": ["Fleur de Gloutovore", "Feuille de Fourbasse", "Pétale de Trukikol", "Tranche de Nodkoko"],
+        } 
+    },
+    "Péki": { 
+        imageName: "Peki",
+        interval: 3, 
+        stats: ["Vie"], 
+        food: { 
+            "Vie": ["Riz", "Graine de Pandouille", "Racine de Bulbiflore", "Racine de Bulbuisson", "Racine de Bulbambou", "Racine de Bulbig", "Fleur de Bulbiflore", "Feuille de Bulbuisson", "Pousses de Bulbambou", "Feuille de Bambouto", "Feuille de Bambouto Sacré", "Racine Magique de Bambouto", "Racine Magique de Bambouto Sacré"],
+        } 
+    },
+    "Vilain Petit Corbac": { 
+        imageName: "VilainPetitCorbac",
+        interval: 5, 
+        stats: ["Prospection"], 
+        food: { 
+            "Prospection": ["Os"],
+        } 
+    },
+    "Wabbit": { 
+        imageName: "Wabbit",
+        interval: 5, 
+        stats: ["Sagesse", "Chance", "Force", "Intelligence", "Agilité"], 
+        food: { 
+            "Sagesse": ["Cawotte", "Cuisse de Wabbit"],
+            "Chance": ["Tige de Pissenlit Diabolique", "Langue de Pissenlit Diabolique", "Feuille de Menthe Sauvage"],
+            "Force": ["Fruit de Palme", "Sève d'Abraknyde Retravaillée"],
+            "Intelligence": ["Bave de Rose Démoniaque", "Trèfle à 5 feuilles"],
+            "Agilité": ["Fleur de Blop Coco", "Fleur de Blop Reinette", "Fleur de Blop Griotte", "Fleur de Blop Indigo"],
+        } 
+    },
+};
+
+const tbody = document.getElementById('breedingBody');
+
+// 2. Charger les données au démarrage
+window.addEventListener('load', loadTable);
+
+document.getElementById('addPetRow').addEventListener('click', () => {
+    addRow();
+    saveTable();
+});
+
+function addRow(savedData = null) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td class="action-cell">
+            <img src="images/items/Familiers/default.png" class="pet-icon-header" alt="">
+            <img src="images/trash.png" alt="Supprimer" class="btn-delete">
+        </td>
+        <td data-label="Familier">
+            <div class="pet-name-container">
+                <select class="pet-select">
+                    <option value="">-- Choisir --</option>
+                    ${Object.keys(petData).map(name => `<option value="${name}">${name}</option>`).join('')}
+                </select>
+            </div>
+        </td>
+        <td data-label="Stat"><select class="stat-select" disabled><option>--</option></select></td>
+        <td data-label="Nourriture"><select class="food-select" disabled><option>-- Choisir --</option></select></td>
+        <td data-label="Intervalle"><span class="interval-display">0</span>h</td>
+        <td data-label="Dernier Repas">
+            <div class="last-fed-container">
+                <input type="datetime-local" class="last-fed">
+                <button class="btn-feed-now" title="Nourrir maintenant">🍴</button>
+            </div>
+        </td>        
+        <td data-label="Prochain Repas"><strong class="next-fed">--</strong></td>
+    `;
+
+    tbody.appendChild(row);
+
+    const petSelect = row.querySelector('.pet-select');
+    const statSelect = row.querySelector('.stat-select');
+    const foodSelect = row.querySelector('.food-select');
+    const lastFedInput = row.querySelector('.last-fed');
+    const btnFeedNow = row.querySelector('.btn-feed-now');
+
+    // LOGIQUE DU BOUTON NOURRIR (Bien placée ici !)
+    btnFeedNow.addEventListener('click', () => {
+        const maintenant = new Date();
+        const tzOffset = maintenant.getTimezoneOffset() * 60000;
+        const localISOTime = new Date(maintenant - tzOffset).toISOString().slice(0, 16);
+        lastFedInput.value = localISOTime;
+        
+        calculateNextMeal(row);
+        saveTable();
+        
+        // On retire de la liste des notifiés pour le prochain cycle
+        const petName = petSelect.value;
+        const nextFedDisplay = row.querySelector('.next-fed');
+        notifiedPets.delete(petName + nextFedDisplay.innerText);
+
+        btnFeedNow.style.background = "#2ecc71";
+        setTimeout(() => btnFeedNow.style.background = "#3d3d3d", 500);
+    });
+
+    // Événements
+    petSelect.addEventListener('change', () => { updatePetInfo(row); saveTable(); });
+    statSelect.addEventListener('change', () => { updateFoodInfo(row); saveTable(); });
+    foodSelect.addEventListener('change', () => { saveTable(); }); // Sauvegarder quand on change la nourriture
+    lastFedInput.addEventListener('change', () => { calculateNextMeal(row); saveTable(); });
+    
+    row.querySelector('.btn-delete').addEventListener('click', () => { 
+        row.remove(); 
+        saveTable(); 
+    });
+
+    // Chargement des données sauvegardées
+    if (savedData) {
+        petSelect.value = savedData.pet;
+        updatePetInfo(row, savedData.stat);
+        updateFoodInfo(row, savedData.food); 
+        lastFedInput.value = savedData.lastFed;
+        calculateNextMeal(row);
+    }
+}
+
+function updatePetInfo(row, selectedStat = null) {
+    const petName = row.querySelector('.pet-select').value;
+    const petImg = row.querySelector('.pet-icon-header');
+    const statSelect = row.querySelector('.stat-select');
+    const intervalDisp = row.querySelector('.interval-display');
+    
+    if (petName && petData[petName]) {
+        const data = petData[petName];
+        let fileName = data.imageName ? data.imageName : petName;
+        
+        // CHEMIN CORRIGÉ ICI
+        petImg.src = `images/items/Familiers/${encodeURIComponent(fileName)}.png`;
+        petImg.style.display = "inline-block";
+        
+        intervalDisp.innerText = data.interval;
+        statSelect.disabled = false;
+        statSelect.innerHTML = data.stats.map(s => `<option value="${s}">${s}</option>`).join('');
+        
+        if (selectedStat) statSelect.value = selectedStat;
+        updateFoodInfo(row);
+        calculateNextMeal(row);
+    } else {
+        petImg.src = "images/items/Familiers/default.png";
+        statSelect.disabled = true;
+        statSelect.innerHTML = '<option>--</option>';
+    }
+}
+
+function updateFoodInfo(row, selectedFood = null) {
+    const petName = row.querySelector('.pet-select').value;
+    const statName = row.querySelector('.stat-select').value;
+    const foodSelect = row.querySelector('.food-select');
+
+    if (petName && statName && petData[petName].food[statName]) {
+        const foods = petData[petName].food[statName];
+        foodSelect.disabled = false;
+        
+        // On remplit le select avec les options du tableau
+        foodSelect.innerHTML = foods.map(f => `<option value="${f}">${f}</option>`).join('');
+        
+        // Si on charge une sauvegarde, on sélectionne la bonne nourriture
+        if (selectedFood) foodSelect.value = selectedFood;
+    } else {
+        foodSelect.innerHTML = '<option>--</option>';
+        foodSelect.disabled = true;
+    }
+}
+
+function calculateNextMeal(row) {
+    const lastFedInput = row.querySelector('.last-fed');
+    const interval = parseInt(row.querySelector('.interval-display').innerText);
+    const nextFedDisplay = row.querySelector('.next-fed');
+
+    if (lastFedInput.value) {
+        let dateRepas = new Date(lastFedInput.value);
+        // On ajoute l'intervalle
+        dateRepas.setHours(dateRepas.getHours() + interval);
+        
+        const options = { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' };
+        nextFedDisplay.innerText = dateRepas.toLocaleString('fr-FR', options);
+        
+        // LOGIQUE INVERSÉE ET AMÉLIORÉE :
+        const maintenant = new Date();
+        
+        if (dateRepas <= maintenant) {
+            // C'est l'heure ou c'est passé -> VERT CLIGNOTANT
+            nextFedDisplay.classList.add('ready');
+            nextFedDisplay.style.color = ""; // On laisse le CSS gérer via la classe .ready
+        } else {
+            // Trop tôt -> ROUGE DISCRET
+            nextFedDisplay.classList.remove('ready');
+            nextFedDisplay.style.color = "rgba(231, 76, 60, 0.5)"; 
+        }
+    }
+}
+
+// 3. Système de sauvegarde
+function saveTable() {
+    const rows = document.querySelectorAll('#breedingBody tr');
+    const data = Array.from(rows).map(row => ({
+        food: row.querySelector('.food-select').value,
+        pet: row.querySelector('.pet-select').value,
+        stat: row.querySelector('.stat-select').value,
+        lastFed: row.querySelector('.last-fed').value
+    }));
+    localStorage.setItem('dofusBreedingData', JSON.stringify(data));
+}
+
+function loadTable() {
+    const saved = localStorage.getItem('dofusBreedingData');
+    if (saved) {
+        const data = JSON.parse(saved);
+        data.forEach(item => addRow(item));
+    }
+}
+
+// Vérifie toutes les minutes si un familier vient de passer en mode "Prêt"
+// Tableau pour suivre quels familiers ont déjà envoyé une notif pour ce repas
+let notifiedPets = new Set();
+
+setInterval(() => {
+    const rows = document.querySelectorAll('#breedingBody tr');
+    rows.forEach(row => {
+        calculateNextMeal(row);
+        
+        const nextFedDisplay = row.querySelector('.next-fed');
+        const petName = row.querySelector('.pet-select').value;
+        const foodName = row.querySelector('.food-select').value;
+        const rowId = row.dataset.id || petName + nextFedDisplay.innerText; // Identifiant unique du repas
+
+        if (nextFedDisplay.classList.contains('ready') && !notifiedPets.has(rowId)) {
+            sendLocalNotification(petName, foodName);
+            notifiedPets.add(rowId);
+        }
+    });
+}, 10000);
+
+function sendLocalNotification(pet, food) {
+    if (Notification.permission === "granted") {
+        new Notification("Alerte Élevage", {
+            body: `Il est l'heure de nourrir ton ${pet} avec : ${food}.`,
+            icon: "./favicon.png"
+        });
+    }
+}
+</script>
+</body>

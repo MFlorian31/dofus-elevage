@@ -1,0 +1,277 @@
+/* --- Base Mobile --- */
+body {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+    font-family: 'Montserrat', sans-serif;
+    margin: 0;
+    padding-bottom: 50px; /* Espace pour le bouton en bas */
+}
+
+/* --- Header & Navbar --- */
+.navbar {
+    background-color: #1a1a1a;
+    padding: 10px 15px;
+    border-bottom: 2px solid rgba(238, 131, 49, 0.7); /* Une petite ligne verte pour le style */
+}
+
+.logo {
+    display: flex;
+    justify-content: space-between; /* Un logo à gauche, un à droite */
+    align-items: center;            /* Aligne les logos verticalement au centre */
+    width: 100%;
+}
+
+.logo img {
+    height: 40px;      /* Fixe une hauteur identique pour les deux */
+    width: auto;       /* Garde les proportions de l'image */
+    object-fit: contain;
+    filter: drop-shadow(0 0 5px rgba(0,0,0,0.5)); /* Optionnel : un petit relief */
+}
+
+/* Style du bouton cloche */
+.btn-notif-status {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+}
+
+/* État quand les notifications sont autorisées */
+.btn-notif-status.enabled {
+    border-color: #2ecc71;
+    background: rgba(46, 204, 113, 0.1);
+}
+
+/* État quand c'est bloqué */
+.btn-notif-status.disabled {
+    border-color: #e74c3c;
+    opacity: 0.5;
+}
+
+.btn-notif-status:active {
+    transform: scale(0.9);
+}
+
+.last-fed-container {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+    width: 65%; /* On augmente un peu la largeur pour caser les deux */
+}
+
+.last-fed {
+    flex-grow: 1;
+    max-width: 80% !important;
+    font-size: 0.8rem; /* Un peu plus petit pour que ça tienne sur une ligne */
+}
+
+.btn-feed-now {
+    background: #3d3d3d;
+    border: 1px solid #555;
+    color: white;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-feed-now:active {
+    transform: scale(0.9);
+    background: #ee8331; /* Orange au clic */
+}
+
+.container {
+    padding: 15px;
+}
+
+.main-title {
+    font-size: 1.5rem;
+    text-align: center;
+    color: #ee8331;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    text-align: center;
+    font-size: 0.9rem;
+    opacity: 0.7;
+    margin-bottom: 20px;
+}
+
+/* --- Transformation du Tableau en Cartes --- */
+#breedingTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* On cache les en-têtes du tableau sur mobile */
+thead {
+    display: none;
+}
+
+/* Chaque ligne (tr) devient une carte */
+#breedingBody tr {
+    display: flex;
+    flex-direction: column;
+    background: #2a2a2a;
+    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 15px;
+    position: relative; /* CRUCIAL */
+    border-left: 6px solid #444;
+}
+
+/* Quand le familier est prêt (via JS) */
+#breedingBody tr:has(.ready) {
+    border-left-color: #2ecc71;
+    animation: pulse-border 2s infinite;
+}
+
+#breedingBody tr td[data-label="Familier"] {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #333;
+}
+
+/* --- Style des cellules (td) --- */
+td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #333;
+}
+
+td:last-child { border-bottom: none; }
+
+/* Ajout de labels auto avant chaque donnée */
+td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #888;
+    text-transform: uppercase;
+}
+
+/* --- Ajustements spécifiques --- */
+.pet-name-container {
+    display: flex;
+    justify-content: flex-end; /* Garde le sélecteur aligné à droite */
+    width: 100%;
+}
+
+.pet-select {
+    width: 100%;
+    max-width: 60%;
+}
+
+.pet-icon-header {
+    width: 45px;  /* Légèrement plus grande pour être l'élément principal */
+    height: 45px;
+    object-fit: contain;
+    padding-left: 5px; /* Léger padding à gauche comme demandé */
+    filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); /* Petit relief sympa */
+    transition: transform 0.3s;
+}
+
+.pet-icon-header[src*="default.png"] {
+    opacity: 0.01; /* Très discret */
+}
+
+select, input[type="datetime-local"] {
+    background: #333;
+    color: white;
+    border: 1px solid #444;
+    padding: 8px;
+    border-radius: 8px;
+    font-family: 'Montserrat', sans-serif;
+    max-width: 60%;
+}
+
+select {
+    appearance: none; /* Supprime le style par défaut iOS */
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px top 50%;
+    background-size: 10px auto;
+    padding-right: 30px !important; /* Espace pour la petite flèche blanche */
+}
+
+.next-fed {
+    font-size: 1.1rem;
+}
+
+.ready {
+    color: #2ecc71 !important;
+    text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+}
+
+/* Bouton Supprimer en haut à droite de la carte */
+.action-cell {
+    display: flex;
+    justify-content: space-between; /* L'icône à gauche, la poubelle à droite */
+    align-items: center;            /* Aligne verticalement au centre */
+    padding: 0 0 10px 0 !important; /* Espace en bas */
+    border-bottom: 2px solid #3d3d3d !important; /* Ligne de séparation plus nette */
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.action-cell::before {
+    display: none !important;
+}
+
+.btn-delete {
+    width: 22px;
+    height: 22px;
+    opacity: 0.6;
+    padding-right: 5px; /* Équilibre avec l'icône de gauche */
+}
+
+.btn-delete:active {
+    opacity: 1;    /* Feedback visuel quand on appuie dessus */
+    transform: scale(1.1);
+}
+
+/* Bouton Ajouter flottant ou large */
+.breeding-controls {
+    position: sticky;
+    top: 10px;
+    z-index: 100;
+    margin-bottom: 20px;
+}
+
+.btn-add {
+    width: 100%;
+    padding: 15px;
+    background: #f0b200;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 1rem;
+    box-shadow: 0 4px 10px rgba(240, 178, 0, 0.3);
+}
+
+@keyframes pulse-border {
+    0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+}
