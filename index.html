@@ -465,21 +465,36 @@ setInterval(() => {
         const nextFedDisplay = row.querySelector('.next-fed');
         const petName = row.querySelector('.pet-select').value;
         const foodName = row.querySelector('.food-select').value;
-        const rowId = row.dataset.id || petName + nextFedDisplay.innerText; // Identifiant unique du repas
+        const rowId = petName + nextFedDisplay.innerText;
 
         if (nextFedDisplay.classList.contains('ready') && !notifiedPets.has(rowId)) {
-            sendLocalNotification(petName, foodName);
+            // ON APPELLE LE SERVICE EXTERNE ICI
+            sendExternalNotification(petName, foodName);
+            
+            // On garde aussi la locale au cas où l'app est ouverte
+            sendLocalNotification(petName, foodName); 
+            
             notifiedPets.add(rowId);
         }
     });
 }, 10000);
 
-function sendLocalNotification(pet, food) {
-    if (Notification.permission === "granted") {
-        new Notification("Alerte Élevage", {
+async function sendExternalNotification(pet, food) {
+    const topic = "dofus-elevage-mflorian31"; // REMPLACE PAR TON NOM UNIQUE
+    
+    try {
+        await fetch(`https://ntfy.sh/${topic}`, {
+            method: 'POST',
             body: `Il est l'heure de nourrir ton ${pet} avec : ${food}.`,
-            icon: "./favicon.png"
+            headers: {
+                'Title': 'Alerte Élevage Dofus',
+                'Priority': 'high',
+                'Tags': 'tada,video_game'
+            }
         });
+        console.log("Notification externe envoyée !");
+    } catch (error) {
+        console.error("Erreur d'envoi NTFY:", error);
     }
 }
 </script>
