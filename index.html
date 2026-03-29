@@ -457,27 +457,44 @@ function loadTable() {
 // Tableau pour suivre quels familiers ont déjà envoyé une notif pour ce repas
 let notifiedPets = new Set();
 
-setInterval(() => {
+// Fonction pour vérifier tous les familiers et envoyer les alertes
+function checkAllPetsAndNotify() {
     const rows = document.querySelectorAll('#breedingBody tr');
     rows.forEach(row => {
-        calculateNextMeal(row);
+        calculateNextMeal(row); // Met à jour l'affichage et les classes 'ready'
         
         const nextFedDisplay = row.querySelector('.next-fed');
         const petName = row.querySelector('.pet-select').value;
         const foodName = row.querySelector('.food-select').value;
+        
+        // Identifiant unique : Nom du familier + Date du prochain repas
         const rowId = petName + nextFedDisplay.innerText;
 
         if (nextFedDisplay.classList.contains('ready') && !notifiedPets.has(rowId)) {
-            // ON APPELLE LE SERVICE EXTERNE ICI
             sendExternalNotification(petName, foodName);
-            
-            // On garde aussi la locale au cas où l'app est ouverte
-            sendLocalNotification(petName, foodName); 
-            
             notifiedPets.add(rowId);
+            saveNotifiedPets(); // On sauvegarde pour ne pas spammer
         }
     });
-}, 10000);
+}
+
+// Lancer la vérification immédiatement au chargement de la page
+window.addEventListener('load', () => {
+    setTimeout(checkAllPetsAndNotify, 2000); // On attend 2 sec que les données chargent
+});
+
+// Continuer de vérifier toutes les 30 secondes si l'app reste ouverte
+setInterval(checkAllPetsAndNotify, 30000);
+
+// Fonctions pour mémoriser les notifs déjà envoyées (LocalStorage)
+function saveNotifiedPets() {
+    localStorage.setItem('notifiedPets', JSON.stringify(Array.from(notifiedPets)));
+}
+function loadNotifiedPets() {
+    const saved = localStorage.getItem('notifiedPets');
+    if (saved) notifiedPets = new Set(JSON.parse(saved));
+}
+loadNotifiedPets();
 
 async function sendExternalNotification(pet, food) {
     const topic = "dofus-elevage-mflorian31"; // REMPLACE PAR TON NOM UNIQUE
