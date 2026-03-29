@@ -395,19 +395,25 @@ function updateFoodInfo(row, selectedFood = null) {
 
 function calculateNextMeal(row) {
     const lastFedInput = row.querySelector('.last-fed');
-    const interval = parseInt(row.querySelector('.interval-display').innerText);
+    const intervalDisplay = row.querySelector('.interval-display');
     const nextFedDisplay = row.querySelector('.next-fed');
     const petName = row.querySelector('.pet-select').value;
     const foodName = row.querySelector('.food-select').value;
 
-    if (lastFedInput.value) {
+    if (lastFedInput.value && intervalDisplay) {
+        const interval = parseInt(intervalDisplay.innerText);
         let dateRepas = new Date(lastFedInput.value);
         dateRepas.setHours(dateRepas.getHours() + interval);
         
+        // --- CETTE PARTIE MANQUAIT : AFFICHAGE ---
+        const options = { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' };
+        nextFedDisplay.innerText = dateRepas.toLocaleString('fr-FR', options);
+        // ----------------------------------------
+
         const maintenant = new Date();
         const diffMs = dateRepas.getTime() - maintenant.getTime();
 
-        // Si le repas est dans le futur, on programme la notif
+        // Si le repas est dans le futur, on programme la notif via le Service Worker
         if (diffMs > 0 && navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
                 type: 'SCHEDULE_NOTIFICATION',
@@ -415,21 +421,18 @@ function calculateNextMeal(row) {
                 pet: petName,
                 food: foodName
             });
-            console.log(`Notif programmée pour ${petName} dans ${Math.round(diffMs/1000/60)} min`);
         }
         
         if (dateRepas <= maintenant) {
-            // C'est l'heure ou c'est passé -> VERT CLIGNOTANT
             nextFedDisplay.classList.add('ready');
-            nextFedDisplay.style.color = ""; // On laisse le CSS gérer via la classe .ready
+            nextFedDisplay.style.color = ""; 
         } else {
-            // Trop tôt -> ROUGE DISCRET
             nextFedDisplay.classList.remove('ready');
             nextFedDisplay.style.color = "rgba(231, 76, 60, 0.5)"; 
         }
     }
 }
-
+    
 // 3. Système de sauvegarde
 function saveTable() {
     const rows = document.querySelectorAll('#breedingBody tr');
