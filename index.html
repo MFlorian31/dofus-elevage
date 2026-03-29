@@ -397,17 +397,26 @@ function calculateNextMeal(row) {
     const lastFedInput = row.querySelector('.last-fed');
     const interval = parseInt(row.querySelector('.interval-display').innerText);
     const nextFedDisplay = row.querySelector('.next-fed');
+    const petName = row.querySelector('.pet-select').value;
+    const foodName = row.querySelector('.food-select').value;
 
     if (lastFedInput.value) {
         let dateRepas = new Date(lastFedInput.value);
-        // On ajoute l'intervalle
         dateRepas.setHours(dateRepas.getHours() + interval);
         
-        const options = { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' };
-        nextFedDisplay.innerText = dateRepas.toLocaleString('fr-FR', options);
-        
-        // LOGIQUE INVERSÉE ET AMÉLIORÉE :
         const maintenant = new Date();
+        const diffMs = dateRepas.getTime() - maintenant.getTime();
+
+        // Si le repas est dans le futur, on programme la notif
+        if (diffMs > 0 && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SCHEDULE_NOTIFICATION',
+                delay: diffMs,
+                pet: petName,
+                food: foodName
+            });
+            console.log(`Notif programmée pour ${petName} dans ${Math.round(diffMs/1000/60)} min`);
+        }
         
         if (dateRepas <= maintenant) {
             // C'est l'heure ou c'est passé -> VERT CLIGNOTANT
